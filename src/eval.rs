@@ -17,8 +17,19 @@ use std::collections::HashSet;
 ///   `(λx. (λy. x)) z` evaluates to `λy. z`.
 ///   `(λx. (λy. x)) a b` evaluates to `a`.
 pub fn eval(term: &Term) -> Term {
-    term.clone()
-    // TODO: "Implement the eval function")
+    match term {
+        Term::Var(_) => term.clone(),
+        Term::Abs(abs_param, abs_body) => abs(abs_param, eval(abs_body)),
+        Term::App(app_term_1, app_term_2) => {
+            let eval_1 = eval(app_term_1);
+            let eval_2 = eval(app_term_2);
+            match eval_1 {
+                Term::Var(_) => app(eval_1, eval_2),
+                Term::Abs(ap, ab) => eval(&substitute(&ab, &ap, &eval_2)),
+                Term::App(app_1, app_2, ) => app(app(eval(&app_1), eval(&app_2)), eval_2),
+            }
+        },
+    }
 }
 
 
@@ -138,7 +149,7 @@ mod tests {
     #[test]
     fn test_eval_simple_application() {
         // (λx. x) y -> y
-        let term = app(abs("x", var("x")), var("y"));
+        let term: Term = app(abs("x", var("x")), var("y"));
         let evaluated = eval(&term);
         let expected = var("y");
         assert_eq!(evaluated, expected);
